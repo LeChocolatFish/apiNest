@@ -2,10 +2,21 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EstoqueModule } from './estoque/estoque.module';
 import { Estoque } from './estoque/estoque.entity';
-
+import { ThrottlerModule } from '@nestjs/throttler'; 
+import { ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+ 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 6000,
+          limit: 3,
+        },
+      ],
+    }),
+    TypeOrmModule.forRoot({ 
       type: 'mysql',
       host: 'localhost',
       port: 3306,
@@ -13,9 +24,15 @@ import { Estoque } from './estoque/estoque.entity';
       password: '',
       database: 'controle_estoque',
       entities: [Estoque],
-      synchronize: false, // já que a tabela foi criada via script
+      synchronize: false, 
     }),
-    EstoqueModule,
+    EstoqueModule
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard, 
+    },
   ],
 })
 export class AppModule {}
